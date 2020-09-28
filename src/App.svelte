@@ -73,11 +73,11 @@
 	{:else if winner === 'tie'}
 		<h3>It's a tie!</h3>
 	{/if}
-	{#each grid as grid, i}	
 	<div class="grid-container">
-		<div on:click={() => play(i)} class="grid-item">{grid}</div>
+		{#each grid as square, i}	
+			<div on:click={() => play(i)} class="grid-item"><p>{square}</p></div>
+		{/each}
 	</div>
-	{/each}
 
 	<button id="reset" on:click={() => reset()}>Reset The Game</button>
 
@@ -96,7 +96,7 @@
 	h1 {
 		color: #ff3e00;
 		text-transform: none;
-		font-size: 3em;
+		font-size: 2.5em;
 		font-weight: 100;
 	}
 
@@ -112,17 +112,18 @@
 		background-color: #2196F3;
 		grid-gap: 10px;
 		padding: 10px;
-		height: 450px;
-		width: 600px;
+		height: 500px;
+		width: 500px;
 		margin: 10px auto;
 	}
 
 	.grid-item {
 		background-color: rgba(255, 255, 255, 0.8);
   		border: 1px solid rgba(0, 0, 0, 0.8);
-  		padding: auto;
   		font-size: 50px;
   		text-align: center;
+		width: 155px;
+		height: 155px;
 	}
 
 	#reset {
