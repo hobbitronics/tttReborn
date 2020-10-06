@@ -1,4 +1,7 @@
 <script>
+	import { fly, fade } from 'svelte/transition';
+	import { elasticOut } from 'svelte/easing';
+
 	export let name;
 	let grid = ['','','','','','','','',''];
 	let winner;
@@ -9,7 +12,24 @@
 	  grid = ['','','','','','','','',''];
 	  winner = undefined;
 	  turnCount = 0;
-    }
+	}
+	
+	function spin(node, { duration }) {
+		return {
+			duration,
+			css: t => {
+				const eased = elasticOut(t);
+
+				return `
+					transform: scale(${eased}) rotate(${eased * 720}deg);
+					color: hsl(
+						${~~(t * 360)},
+						${Math.min(100, 1000 - 1000 * t)}%,
+						${Math.min(50, 500 - 500 * t)}%
+					);`
+			}
+		};
+	}
 
 	//winning conditions Across rows	
   function winA (player) {
@@ -32,12 +52,13 @@
 	
 	//generates random number for pc player
 	const rand = () => {
-        let number = Math.floor(Math.random()*9);
+		const number = Math.floor(Math.random()*9);
+		console.log(number)
 		if (winner === 'O'){
 			return null;	//will return and exit function
 		} else if (grid[number] !== 'X' && grid[number] !== 'O') //making sure the square is not used already
         {
-        return number;     //the choice is accepted!
+			return number;     //the choice is accepted!
         } else {return rand()}  //taken already, try again
       }
 
@@ -54,7 +75,7 @@
 		
 		if (turnCount === 9 && winner === undefined){   //checks for a tie
         winner = 'tie';
-      	}
+		  }
 		cpMove = rand();   	//computers choice
 		grid[cpMove] = 'X';	//computer move, sets random board space not already moved on
 		winA('X');
@@ -67,15 +88,19 @@
 <main>
 	<h1>Welcome to {name}!</h1>
 	{#if winner === 'O'}
-		<h3>Congratulations, you won!</h3>
+		<h3 in:spin="{{duration: 8000}}">Congratulations, you won!</h3>
 	{:else if winner === 'X'}
-		<h3>The computer won.</h3>
+		<h3 transition:fly="{{ y: -100, duration: 2000 }}">The computer won.</h3>
 	{:else if winner === 'tie'}
-		<h3>It's a tie!</h3>
+		<h3 transition:fly="{{ y: -100, duration: 2000 }}">It's a tie!</h3>
 	{/if}
 	<div class="grid-container">
 		{#each grid as square, i}	
-			<div on:click={() => play(i)} class="grid-item"><p>{square}</p></div>
+			<div on:click={() => play(i)} class="grid-item">
+				{#if square}
+				<p transition:fade>{square}</p>
+				{/if}
+			</div>
 		{/each}
 	</div>
 
