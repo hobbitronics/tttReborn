@@ -5,13 +5,17 @@
 	export let name;
 	let grid = ['','','','','','','','',''];
 	let winner;
-    let cpMove;
-    let turnCount = 0;
+	let turnCount = 0;
+	let pcTurnCount = 0;
+	$: totalCount = turnCount + pcTurnCount;
+	let success = false;
+	let blocked = false;
 	
 	const reset = () => {
 	  grid = ['','','','','','','','',''];
 	  winner = undefined;
 	  turnCount = 0;
+	  pcTurnCount = 0;
 	}
 	
 	function spin(node, { duration }) {
@@ -53,7 +57,6 @@
 	//generates random number for pc player
 	const rand = () => {
 		const number = Math.floor(Math.random()*9);
-		console.log(number)
 		if (winner === 'O'){
 			return null;	//will return and exit function
 		} else if (grid[number] !== 'X' && grid[number] !== 'O') //making sure the square is not used already
@@ -62,43 +65,51 @@
         } else {return rand()}  //taken already, try again
       }
 
-	//called when a box is clicked
+	//called with mousedown on a box
 	const play = choice => {
-		let success = false;
-      	if (grid[choice] !== 'X' && grid[choice] !== 'O' && winner === undefined){  //checks that box isn't already full and no winner
+      	if (grid[choice] !== 'X' && grid[choice] !== 'O' && winner === undefined && turnCount === pcTurnCount && !blocked){  //checks that box isn't already full and no winner
+		  turnCount +=1;
 		  grid[choice] = 'O';                            //sets the grid number on the board to 'O'
 		  success = true;
-		}
-		if (success === true) {	//prevent computer from going if you click on an X or O
-		winA('O');   //check for a win
-		turnCount +=1;
-		
-		if (turnCount === 9 && winner === undefined){   //checks for a tie
-        winner = 'tie';
-		  }
-		cpMove = rand();   	//computers choice
-		grid[cpMove] = 'X';	//computer move, sets random board space not already moved on
-		winA('X');
-		turnCount +=1;
+		  winA('O');   //check for a win
+		  console.log(totalCount)
+		  console.log(winner)
 		}
 	}
-	
+	//called on mouseup
+	const computer = async () => {
+		if (success === true && turnCount === (1 + pcTurnCount) && totalCount < 9) {	//prevent computer from going if you click on an X or O
+			console.log(totalCount)
+			pcTurnCount+=1;
+			const delay = new Promise(resolve => setTimeout(() => resolve('completed'), 500));		
+			await delay//.then((message) => {
+			const cpMove = rand();		//computers choice 	
+			grid[cpMove] = 'X';			//computer move, sets random board space not already moved on
+			winA('X');
+			success = false;
+			//})
+		}
+
+	}
 </script>
 
 <main>
 	<h1>Welcome to {name}!</h1>
 	{#if winner === 'O'}
-		<h3 in:spin="{{duration: 8000}}">Congratulations, you won!</h3>
+		<h3 in:spin="{{duration: 6000}}">Congratulations, you won!</h3>
 	{:else if winner === 'X'}
 		<h3 transition:fly="{{ y: -100, duration: 2000 }}">The computer won.</h3>
-	{:else if winner === 'tie'}
+	{:else if totalCount >= 9}
 		<h3 transition:fly="{{ y: -100, duration: 2000 }}">It's a tie!</h3>
 	{/if}
 	<div class="grid-container">
 		{#each grid as square, i}	
-			<div on:click={() => play(i)} class="grid-item">
+			<div on:mousedown={() => play(i)} on:mouseup={() => computer()} class="grid-item">
 				{#if square}
-				<p transition:fade>{square}</p>
+				<p transition:fade
+				on:introstart={() => blocked = true}
+				on:introend={() => blocked = false}	
+					>{square}</p>
 				{/if}
 			</div>
 		{/each}
