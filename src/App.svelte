@@ -1,6 +1,10 @@
 <script>
 	import { fly, fade } from 'svelte/transition';
 	import { elasticOut } from 'svelte/easing';
+	import { beforeUpdate, afterUpdate } from 'svelte';
+
+	beforeUpdate(() => console.log('before: ', grid))
+	afterUpdate(() => console.log('after: ', grid))
 
 	export let name;
 	let grid = ['','','','','','','','',''];
@@ -57,40 +61,30 @@
 	//generates random number for pc player
 	const rand = () => {
 		const number = Math.floor(Math.random()*9);
-		if (winner === 'O'){
-			return null;	//will return and exit function
-		} else if (grid[number] !== 'X' && grid[number] !== 'O') //making sure the square is not used already
-        {
-			return number;     //the choice is accepted!
-        } else {return rand()}  //taken already, try again
+		return (!grid[number] ? number : rand())
       }
 
 	//called with mousedown on a box
 	const play = choice => {
-      	if (grid[choice] !== 'X' && grid[choice] !== 'O' && winner === undefined && turnCount === pcTurnCount && !blocked){  //checks that box isn't already full and no winner
 		  turnCount +=1;
 		  grid[choice] = 'O';                            //sets the grid number on the board to 'O'
 		  success = true;
 		  winA('O');   //check for a win
-		  console.log(totalCount)
-		  console.log(winner)
-		}
 	}
 	//called on mouseup
 	const computer = async () => {
-		if (success === true && turnCount === (1 + pcTurnCount) && totalCount < 9) {	//prevent computer from going if you click on an X or O
-			console.log(totalCount)
 			pcTurnCount+=1;
+			success = false;
 			const delay = new Promise(resolve => setTimeout(() => resolve('completed'), 500));		
 			await delay//.then((message) => {
-			const cpMove = rand();		//computers choice 	
-			grid[cpMove] = 'X';			//computer move, sets random board space not already moved on
-			winA('X');
-			success = false;
-			//})
-		}
-
+			grid[rand()] = 'X';			//sets X on random board tile
+			winA('X');  //})
 	}
+
+	const pcCanPLay = () => turnCount === (1 + pcTurnCount) && totalCount < 9 && !winner && success	
+
+	const uCanPlay = i => !winner && turnCount === pcTurnCount && !blocked && !grid[i]  
+
 </script>
 
 <main>
@@ -103,19 +97,19 @@
 		<h3 transition:fly="{{ y: -100, duration: 2000 }}">It's a tie!</h3>
 	{/if}
 	<div class="grid-container">
-		{#each grid as square, i}	
-			<div on:mousedown={() => play(i)} on:mouseup={() => computer()} class="grid-item">
+		{#each grid as square, i (i)}	
+			<div id={i} on:mousedown={() => uCanPlay(i) && play(i)} on:mouseup={() => pcCanPLay() && computer()} class="grid-item">
 				{#if square}
 				<p transition:fade
-				on:introstart={() => blocked = true}
-				on:introend={() => blocked = false}	
-					>{square}</p>
+                on:introstart={() => blocked = true}
+                on:introend={() => blocked = false}
+                >{square}</p>
 				{/if}
 			</div>
 		{/each}
 	</div>
 
-	<button id="reset" on:click={() => reset()}>Reset The Game</button>
+	<button id="reset" on:click={reset}>Reset The Game</button>
 
 	
 	<p>Visit <a href="https://github.com/hobbitronics" target="blank">my Github page</a> to see more of my projects.</p>
